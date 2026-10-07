@@ -15,6 +15,7 @@ import React, { useState } from "react";
  * @param {number} props.totalQuestions - Le nombre total de questions du quizz.
  * @param {Object|null} props.savedAnswer - La réponse déjà enregistrée si l'utilisateur revient en arrière.
  * @param {Function} props.onAnswer - Fonction callback appelée lors de la validation pour informer le parent.
+ * @param {boolean} props.readOnly - Affiche le corrigé sans permettre de modifier les réponses.
  */
 export default function ShowQuestion({
     question,
@@ -22,6 +23,7 @@ export default function ShowQuestion({
     totalQuestions,
     savedAnswer = null,
     onAnswer,
+    readOnly = false,
 }) {
     // --------------------------------------------------------------------------
     // 1. ÉTATS LOCAUX DU COMPOSANT (useState)
@@ -36,6 +38,8 @@ export default function ShowQuestion({
     // Mémorise si l'utilisateur a cliqué sur le bouton "Valider la réponse".
     // La syntaxe "!!savedAnswer" est une astuce JavaScript pour convertir une valeur en vrai booléen (true ou false).
     const [isSubmitted, setIsSubmitted] = useState(!!savedAnswer);
+    const showCorrection = readOnly || isSubmitted;
+    const isUnanswered = readOnly && !savedAnswer;
 
     // --------------------------------------------------------------------------
     // 2. VARIABLES DÉRIVÉES ET FONCTIONS
@@ -53,7 +57,7 @@ export default function ShowQuestion({
      */
     const handleValidate = () => {
         // Sécurité : si aucune réponse n'est cochée, on ne fait rien.
-        if (!selectedAnswer) return;
+        if (readOnly || isSubmitted || !selectedAnswer) return;
 
         const correct = selectedAnswer === question.correct;
 
@@ -95,7 +99,7 @@ export default function ShowQuestion({
                     // On modifie l'apparence des boutons en fonction de l'état (normal, sélectionné, correct, incorrect).
                     let optionStyle = "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-gray-300";
 
-                    if (isSubmitted) {
+                    if (showCorrection) {
                         if (answer === question.correct) {
                             // C'est la bonne réponse : style vert !
                             optionStyle = "bg-green-50 dark:bg-green-950/40 border-green-500 text-green-900 dark:text-green-300 font-semibold shadow-sm";
@@ -104,7 +108,7 @@ export default function ShowQuestion({
                             optionStyle = "bg-red-50 dark:bg-red-950/40 border-red-500 text-red-900 dark:text-red-300 shadow-sm";
                         } else {
                             // Autres réponses non choisies : grisées
-                            optionStyle = "opacity-50 border-gray-200 dark:border-gray-700";
+                            optionStyle = `${readOnly ? "" : "opacity-50"} border-gray-200 dark:border-gray-700`;
                         }
                     } else if (selectedAnswer === answer) {
                         // Réponse sélectionnée avant validation : style bleu
@@ -115,7 +119,7 @@ export default function ShowQuestion({
                         <label
                             key={index}
                             htmlFor={inputId}
-                            className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${optionStyle}`}
+                            className={`flex items-center p-4 border-2 rounded-xl ${showCorrection ? "cursor-default" : "cursor-pointer"} transition-all duration-200 ${optionStyle}`}
                         >
                             {/*
                               Champ de type "radio" :
@@ -129,11 +133,20 @@ export default function ShowQuestion({
                                 name={`question-${questionNumber}`}
                                 value={answer}
                                 checked={selectedAnswer === answer}
-                                disabled={isSubmitted}
+                                disabled={showCorrection}
                                 onChange={() => setSelectedAnswer(answer)}
-                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                className="w-4 h-4 shrink-0 text-blue-600 focus:ring-blue-500 disabled:cursor-default"
                             />
-                            <span className="ml-3 text-base text-gray-800 dark:text-gray-200">{answer}</span>
+                            <span className="ml-3 min-w-0 break-words text-base text-gray-800 dark:text-gray-200">
+                                {answer}
+                                {readOnly && (answer === selectedAnswer || answer === question.correct) && (
+                                    <span className="block mt-1 text-sm font-semibold">
+                                        {answer === selectedAnswer && "Votre réponse"}
+                                        {answer === selectedAnswer && answer === question.correct && " · "}
+                                        {answer === question.correct && "Bonne réponse"}
+                                    </span>
+                                )}
+                            </span>
                         </label>
                     );
                 })}
@@ -144,18 +157,20 @@ export default function ShowQuestion({
               - Si la réponse a été validée (isSubmitted === true) : on affiche le message de correction et explications.
               - Sinon : on affiche le bouton "Valider la réponse".
             */}
-            {isSubmitted ? (
+            {showCorrection ? (
                 <div
                     className={`animate__animated ${
                         isCorrect ? "animate__bounceIn" : "animate__headShake"
                     } w-full p-5 rounded-xl border-2 mb-2 ${
-                        isCorrect
+                        isUnanswered
+                            ? "bg-gray-50 border-gray-300 text-gray-900 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200"
+                            : isCorrect
                             ? "bg-green-50 border-green-400 text-green-900 dark:bg-green-950/40 dark:border-green-800 dark:text-green-200"
                             : "bg-red-50 border-red-400 text-red-900 dark:bg-red-950/40 dark:border-red-800 dark:text-red-200"
                     }`}
                 >
                     <p className="font-bold text-lg mb-1 flex items-center gap-2">
-                        <span>{isCorrect ? "🎉 Bonne réponse !" : "❌ Mauvaise réponse !"}</span>
+                        <span>{isUnanswered ? "Question sans réponse" : isCorrect ? "🎉 Bonne réponse !" : "❌ Mauvaise réponse !"}</span>
                     </p>
 
                     {/* Si l'utilisateur a fait une erreur, on lui rappelle quelle était la bonne réponse */}

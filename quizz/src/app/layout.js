@@ -33,7 +33,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       {/* On applique la classe CSS de la police Google à tout le corps de la page */}
-      <body className={inter.className}>
+      {/* Tolère les attributs ajoutés à body par les extensions du navigateur. */}
+      <body className={inter.className} suppressHydrationWarning>
         {/* Ici, Next.js injecte automatiquement le contenu de la page courante (ex: page.js) */}
         {children}
       </body>

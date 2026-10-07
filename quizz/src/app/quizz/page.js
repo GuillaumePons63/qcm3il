@@ -49,6 +49,7 @@ export default function Start() {
 
     // Booléen indiquant si le quizz est terminé (pour afficher l'écran de fin)
     const [isFinished, setIsFinished] = useState(false);
+    const [isReviewing, setIsReviewing] = useState(false);
 
     // --------------------------------------------------------------------------
     // 2. LOGIQUE MÉTIER & FONCTIONS DE GESTION DU JEU
@@ -77,6 +78,7 @@ export default function Start() {
         setCurrentQuestion(0);
         setUserAnswers({});
         setIsFinished(false);
+        setIsReviewing(false);
     };
 
     /**
@@ -103,6 +105,7 @@ export default function Start() {
         setCurrentQuestion(0);
         setUserAnswers({});
         setIsFinished(false);
+        setIsReviewing(false);
     };
 
     // --------------------------------------------------------------------------
@@ -133,6 +136,34 @@ export default function Start() {
                     onTrigger={setNewQuizz}
                     maxQuestions={questions.length}
                 />
+            ) : isFinished && isReviewing ? (
+                <div className="w-full max-w-2xl flex flex-col items-center gap-6">
+                    <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center">
+                        Corrigé du quizz
+                    </h1>
+                    <button
+                        onClick={() => setIsReviewing(false)}
+                        className="px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md"
+                    >
+                        Retour au résultat
+                    </button>
+                    {quizz.map((question, index) => (
+                        <ShowQuestion
+                            key={index}
+                            question={question}
+                            questionNumber={index + 1}
+                            totalQuestions={quizz.length}
+                            savedAnswer={userAnswers[index]}
+                            readOnly
+                        />
+                    ))}
+                    <button
+                        onClick={() => setIsReviewing(false)}
+                        className="px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md"
+                    >
+                        Retour au résultat
+                    </button>
+                </div>
             ) : isFinished ? (
                 /*
                   Cas B : isFinished === true
@@ -199,6 +230,12 @@ export default function Start() {
 
                     {/* Boutons d'action : Recommencer ou Retourner à l'accueil */}
                     <div className="flex flex-wrap gap-4 justify-center mt-2">
+                        <button
+                            onClick={() => setIsReviewing(true)}
+                            className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all"
+                        >
+                            Consulter le corrigé
+                        </button>
                         <button
                             onClick={handleRestart}
                             className="px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
